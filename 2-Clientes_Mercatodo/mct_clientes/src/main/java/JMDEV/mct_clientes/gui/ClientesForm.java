@@ -10,6 +10,8 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.List;
 
 @Component
@@ -27,12 +29,23 @@ public class ClientesForm extends JFrame {
     private JButton limpiarButton;
     IClienteServicio clienteServicio;
     private DefaultTableModel tablaModeloClientes;
+    private Integer idCliente;
 
     @Autowired
     public ClientesForm(ClienteServicio clienteServicio){
         this.clienteServicio = clienteServicio;
         inicarForma();
         guardarButton.addActionListener(e -> guardarCliente ());
+
+
+        clientesTabla.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                super.mouseClicked(e);
+                cargarClienteSeleccionado();
+            }
+        });
+        eliminarButton.addActionListener(e -> eliminarCliente());
     }
 
     private void inicarForma(){
@@ -72,6 +85,7 @@ public class ClientesForm extends JFrame {
             this.tablaModeloClientes.addRow(renglonCliente);
         });
     }
+
     private void guardarCliente(){
         if(nombreTexto.getText().equals("")){
             mostrarMensaje("Proporcione un nombre");
@@ -97,18 +111,62 @@ public class ClientesForm extends JFrame {
         String telefono = telefonoTexto.getText();
         int puntosPC = Integer.parseInt(puntosTexto.getText());
 
-        Cliente cliente = new Cliente();
-        cliente.setNombre(nombre);
-        cliente.setApellido(apellido);
-        cliente.setCiudad(ciudad);
-        cliente.setDireccion(direccion);
-        cliente.setTelefono(telefono);
-        cliente.setPuntosPC(puntosPC);
+        Cliente cliente = new Cliente(this.idCliente,nombre,apellido,ciudad,direccion,telefono,puntosPC);
+        //It is not necessary to pass the attributes by set since they are in the constructor
+//        cliente.setIdcliente(this.idCliente);
+//        cliente.setNombre(nombre);
+//        cliente.setApellido(apellido);
+//        cliente.setCiudad(ciudad);
+//        cliente.setDireccion(direccion);
+//        cliente.setTelefono(telefono);
+//        cliente.setPuntosPC(puntosPC);
 
-        this.clienteServicio.guardarCliente(cliente);
+        this.clienteServicio.guardarCliente(cliente);//Insert or modify depending on the client id attribute
+        if(idCliente==null){
+            mostrarMensaje("Se agrego cliente");
+        }else {
+            mostrarMensaje("Se modifico el cliente");
+        }
         limpiarFormulario();
         listClients();
     }
+
+    private void cargarClienteSeleccionado(){
+        int renglon = clientesTabla.getSelectedRow();
+        if(renglon != -1){ //-1 means no log was selected
+            String id = clientesTabla.getModel().getValueAt(renglon,0).toString();
+            this.idCliente = Integer.parseInt(id);
+            String nombre = clientesTabla.getModel().getValueAt(renglon,1).toString();
+            this.nombreTexto.setText(nombre);
+            String apellido = clientesTabla.getModel().getValueAt(renglon,2).toString();
+            this.apellidoTexto.setText(apellido);
+            String ciudad = clientesTabla.getModel().getValueAt(renglon,3).toString();
+            this.ciudadTexto.setText(ciudad);
+            String direccion = clientesTabla.getModel().getValueAt(renglon,4).toString();
+            this.direccionTexto.setText(direccion);
+            String telefono = clientesTabla.getModel().getValueAt(renglon,5).toString();
+            this.telefonoTexto.setText(telefono);
+            String puntosPC = clientesTabla.getModel().getValueAt(renglon,6).toString();
+            this.puntosTexto.setText(puntosPC);
+        }
+    }
+
+    private void eliminarCliente(){
+        int renglon = clientesTabla.getSelectedRow();
+        if (renglon!=-1){
+            String idClienteStr = clientesTabla.getModel().getValueAt(renglon,0).toString();
+            this.idCliente = Integer.parseInt(idClienteStr);
+            Cliente cliente = new Cliente();
+            cliente.setIdcliente(this.idCliente);
+            clienteServicio.eliminarCliente(cliente);
+            mostrarMensaje("Cliente con id: "+this.idCliente+" eliminado");
+            limpiarFormulario();
+            listClients();
+        }else {
+            mostrarMensaje("Debe seleccionar un cliente a eliminar");
+        }
+    }
+
     private void mostrarMensaje(String mensaje){
         JOptionPane.showMessageDialog(this,mensaje);
     }
@@ -120,5 +178,8 @@ public class ClientesForm extends JFrame {
         direccionTexto.setText("");
         telefonoTexto.setText("");
         puntosTexto.setText("");
+        this.idCliente=null;
+        //Deseleccionamos cualquier seleccion realizada en la tabla
+        this.clientesTabla.getSelectionModel().clearSelection();
     }
 }
