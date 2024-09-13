@@ -5,7 +5,6 @@ import JMDEV.mct_clientes.servicio.ClienteServicio;
 import JMDEV.mct_clientes.servicio.IClienteServicio;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.event.ActionEvent;
@@ -46,6 +45,7 @@ public class ClientesForm extends JFrame {
             }
         });
         eliminarButton.addActionListener(e -> eliminarCliente());
+        limpiarButton.addActionListener(e -> limpiarFormulario());
     }
 
     private void inicarForma(){
@@ -60,10 +60,18 @@ public class ClientesForm extends JFrame {
 
         //We design the table, in the first argument we insert the number of rows, and the second argument the columns
 
-        this.tablaModeloClientes = new DefaultTableModel(0,7);
+        this.tablaModeloClientes = new DefaultTableModel(0,7){
+            @Override
+            public boolean isCellEditable(int row, int column){ //Para no poder editar ninguna celda desde la tabla
+                return false;
+            }
+        };
         String[] cabeceros = {"Id","Nombre","Apellido","Ciudad","Direccion","Telefono","Puntos PC"};
         this.tablaModeloClientes.setColumnIdentifiers(cabeceros);
         this.clientesTabla = new JTable(tablaModeloClientes);
+
+        //Restringimos la seleccion a un solo cliente a la vez
+        this.clientesTabla.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         //We loaded the objets client list to the table
         listClients();
